@@ -10,5 +10,8 @@
     "cf-login": "wrangler login",
     "dev": "wrangler dev",
     "deploy": "wrangler publish"
+  },
+  "dependencies": {
+    "he": "^1.2.0"
   }
 }

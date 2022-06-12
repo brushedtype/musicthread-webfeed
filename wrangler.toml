@@ -1,5 +1,4 @@
 name = "musicthread-rss"
 main = "src/main.js"
 compatibility_date = "2022-06-08"
-type = "javascript"
 workers_dev = true
