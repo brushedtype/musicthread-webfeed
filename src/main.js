@@ -1,3 +1,5 @@
+import he from 'he';
+
 addEventListener('fetch', event => {
     event.respondWith(main(event.request));
 });
@@ -8,19 +10,14 @@ async function main(request) {
         return new Response("Only GET is supported", { status: 400 })
     }
 
-    let threadKey = parseThreadKey(request.url)
+    const threadKey = parseThreadKey(request.url)
     if (threadKey == null) {
         return new Response("Unsupported request path, expects valid MusicThread thread path", { status: 404 })
     }
 
-    // Fetch MusicThread thread
-    let thread;
     try {
-        const response = await fetch("https://musicthread.app/api/v0/thread/"+threadKey, {
-            headers: {
-                Accept: "application/json;charset=UTF-8"
-            }
-        });
+        // Fetch MusicThread thread
+        const response = await fetchThread(threadKey);
         const json = await response.json();
 
         if (response.status >= 400) {
@@ -29,22 +26,102 @@ async function main(request) {
             return new Response(errorMessage, { status: response.status });
         }
 
-        thread = json
+        // Generate RSS Feed
+        const feed = generateRSSFeed(json);
 
-    } catch (exception) {
-        return new Response("Failed to fetch response from MusicThread", { status: 500 })
+        // Return successful HTTP response
+        return new Response(feed, {
+            headers: {
+                "Content-Type": "application/xml;charset=UTF-8"
+            }
+        });
+
+    } catch (error) {
+        console.error(error)
+        return new Response("Failed to generate response from MusicThread", { status: 500 })
     }
-
-    // Generate RSS Feed
-    let feed = generateRssFeed(thread);
-
-    // Return HTTP response
-    return new Response(feed, {
-        headers: {
-            "Content-Type": "application/xml;charset=UTF-8"
-        }
-    });
 };
+
+async function fetchThread(key) {
+    const opts = {
+        headers: {
+            Accept: "application/json;charset=UTF-8"
+        }
+    }
+    return await fetch(`https://musicthread.app/api/v0/thread/${key}`, opts);
+}
+
+/**
+ * Returns a valid XML string representing the link description or empty string when no
+ * description is available.
+ *
+ * @param  {Object} link The Link object obtained from the MusicThread API
+ * @return {String} The summary element or empty string
+ */
+function generateRSSFeedEntrySummary(link) {
+    if (link.description == "") {
+        return "";
+    }
+    return `<summary type="html">${encodeHtml(link.description)}</summary>`
+}
+
+/**
+ * Returns a valid XML `entry` element representing the given link
+ *
+ * @param  {Object} link The Link object obtained from the MusicThread API
+ * @return {Array<String>} The valid XML element representing the given link
+ */
+function generateRssFeedEntry(link) {
+    const linkURL = `https://musicthread.app/link/${link.key}`
+
+    const summaryContent = generateRSSFeedEntrySummary(link)
+
+    return `
+<entry>
+    <published>${link.submitted_at}</published>
+    <updated>${link.submitted_at}</updated>
+
+    <id>${linkURL}</id>
+    <link href="${linkURL}" rel="alternate" title="${encodeHtml(link.title)}" type="text/html" />
+
+    <author>
+        <name>${encodeHtml(link.artist)}</name>
+    </author>
+
+    <title type="html">${encodeHtml(link.title)}</title>
+    <content type="html">${encodeHtml(generateItemContent(link))}</content>
+    <media:thumbnail url="${link.thumbnail_url}" xmlns:media="http://search.yahoo.com/mrss/"/>
+    <category term="type" label="${link.type.capitalize()}"/>
+
+    ${summaryContent}
+</entry>`
+}
+
+/**
+ * Returns a valid XML string representing the thread description or empty string when no
+ * description is available.
+ *
+ * @param  {Object} thread The Thread object obtained from the MusicThread API
+ * @return {String} The subtitle element or empty string
+ */
+function generateRSSFeedThreadSummary(thread) {
+    if (thread.description == "") {
+        return ""
+    }
+    return `<subtitle>${encodeHtml(root.thread.description)}</subtitle>`
+}
+
+/**
+ * Returns an array of valid XML tags representing the thread tags as `category` elements
+ *
+ * @param  {Object} thread The Thread object obtained from the MusicThread API
+ * @return {Array<String>} The array of valid XML tags representing the thread tags
+ */
+function generateRSSFeedCategories(thread) {
+    return thread.tags.map(tag => {
+        return `<category term="${encodeHtml(tag)}" />`
+    })
+}
 
 /**
  * Returns a valid RSS feed for the provided MusicThread as a String XML.
@@ -52,38 +129,34 @@ async function main(request) {
  * @param  {Object} root The JSON response returned by MusicThread's "Get Thread" API
  * @return {String} The XML RSS Feed for this thread
  */
-function generateRssFeed(root) {
-    let rssFeed = `<?xml version="1.0" encoding="utf-8"?>
-        <feed xmlns="http://www.w3.org/2005/Atom">
-            <generator uri="https://github.com/brushedtype/musicthread-rss" version="0.9.0">MusicThread RSS</generator>
-            <updated>` + new Date().toISOString() + `</updated>
-            <author>
-              <name>` + encodeHtml(root.thread.author.name) + `</name>
-            </author>
-            <link href="https://feed.musicthread.app/thread/` + root.thread.key + `" rel="self" type="application/atom+xml"/>
-            <link href="https://musicthread.app/thread/` + root.thread.key + `" rel="alternate" type="text/html"/>
-            <id>https://feed.musicthread.app/thread/` + root.thread.key + `</id>
-            <title type="html">` + root.thread.title + `</title>`
-            + (root.thread.description?.length > 0 ? (`<subtitle>` + encodeHtml(root.thread.description) + `</subtitle>`) : ``)
-            + root.thread.tags.forEach(tag => feedCategories += "<category term=\"" + encodeHtml(tag) + "\"/>");
-    root.links.forEach(link => {
-        rssFeed += `<entry>
-            <title type="html">` + encodeHtml(link.title) + `</title>
-            <link href="https://musicthread.app/link/` + link.key + `" rel="alternate" title="` + encodeHtml(link.title) + `" type="text/html"/>
-            <published>` + link.submitted_at + `</published>
-            <updated>` + link.submitted_at + `</updated>
-            <id>https://musicthread.app/link/` + link.key + `</id>
-            <author>
-                <name>` + encodeHtml(link.artist) + `</name>
-            </author>
-            <category term="type" label="` + link.type.capitalize() + `"/>`
-            + (link.description?.length > 0 ? (`<summary type="html">` + encodeHtml(link.description) + `</summary>`) : ``) +
-            `<media:thumbnail url="` + link.thumbnail_url + `" xmlns:media="http://search.yahoo.com/mrss/"/>
-            <content type="html">` + encodeHtml(generateItemContent(link)) + `</content>
-        </entry>`;
-    });
-    rssFeed += "</feed>";
-    return rssFeed;
+function generateRSSFeed(root) {
+    const feedURL = `https://rss.musicthread.app/thread/${root.thread.key}`;
+    const threadURL = `https://musicthread.app/thread/${root.thread.key}`;
+
+    const subtitleContent = generateRSSFeedThreadSummary(root.thread);
+    const categoryContentItems = generateRSSFeedCategories(root.thread).join("\n");
+    const entryContentItems = root.links.map(link => generateRssFeedEntry(link)).join("\n");
+
+    return `
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <generator uri="https://github.com/brushedtype/musicthread-rss" version="0.9.0">MusicThread RSS</generator>
+    <updated>${(new Date()).toISOString()}</updated>
+
+    <id>${feedURL}</id>
+    <link href="${feedURL}" rel="self" type="application/atom+xml"/>
+    <link href="${threadURL}" rel="alternate" type="text/html"/>
+
+    <author>
+        <name>${encodeHtml(root.thread.author.name)}</name>
+    </author>
+
+    <title type="html">${root.thread.title}</title>
+    ${subtitleContent}
+    ${categoryContentItems}
+
+    ${entryContentItems}
+</feed>`;
 }
 
 /**
@@ -106,11 +179,17 @@ String.prototype.capitalize = function() {
  * @return {String} An HTML String for the provided MusicThread link
  */
 function generateItemContent(link) {
-    return `<img src="` + link.thumbnail_url + `">
-    <h1>` + encodeHtml(link.title) + `</h1>
-    <h3>by `+ encodeHtml(link.artist) + `</h3>`
-    + (link.description?.length > 0 ? (`<p>` + link.description + `</p>`) : ``) +
-    `<p><a href="https://musicthread.app/link/` + link.key + `">Open in MusicThread</a></p>`;
+    const linkDescription = (link.description == "") ? "" : `<p>${link.description}</p>`
+
+    return `
+<img src="${link.thumbnail_url}">
+<h1>${encodeHtml(link.title)}</h1>
+<h3>by ${encodeHtml(link.artist)}</h3>
+${linkDescription}
+<p>
+    <a href="https://musicthread.app/link/${link.key}">Open in MusicThread</a>
+</p>
+    `;
 }
 
 /**
@@ -123,13 +202,7 @@ function generateItemContent(link) {
  * @return {String} The encoded String ready to use as HTML values
  */
 function encodeHtml(text) {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/'/g, '&#39;')
-        .replace(/"/g, '&#34;')
-        .replace(/\//, '&#x2F;');
+    return he.encode(text);
 }
 
 /**
