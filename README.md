@@ -1,43 +1,39 @@
 # MusicThread RSS
 
-A light microservice to serve [Atom 1.0 Feeds](https://www.rfc-editor.org/rfc/rfc4287) for [MusicThread](https://musicthread.app) threads using the same URL path schema (i.e. `/thread/<THREAD_KEY>`). Private threads are not currently supported.
+A light microservice to serve [Atom 1.0 Feeds](https://www.rfc-editor.org/rfc/rfc4287) for [MusicThread](https://musicthread.app/).
+
+People use the RSS feeds for following updates to specific threads via their RSS reader, or as part of automations with services like [IFTTT](https://ifttt.com). If you have a novel use for MusicThread RSS, please let us know!
+
+MusicThread RSS is run by MusicThread at https://rss.musicthread.app/ but individuals may want to run their own fork with modifications.
+
+URLs follow the same path structure as on the main website (i.e. `/thread/<THREAD_KEY>`). Private threads are not currently supported and attempting to access them will return an error.
 
 ## Architecture
 
-The microservice is a single Javascript file (`src/main.js`) powered by [Node.js](https://nodejs.org/en/) and [Cloudflare Workers](https://workers.cloudflare.com)' CLI, [wrangler](https://github.com/cloudflare/wrangler2). However, the microservice isn't tighly coupled to this environment may be trivially integrated into other environments, if desired.
+MusicThread RSS is designed to be run using [Cloudflare Workers](https://workers.cloudflare.com/).
 
-## Installation
+The code is available in a single Javascript file (`src/main.js`) and should be trivially integrated into other environments if needed.
 
-If using [wrangler](https://github.com/cloudflare/wrangler2), no manual changes to the configuration or code are necessary. If this is your approach, ensure you follow the steps below, taken from [Cloudflare](https://www.cloudflare.com)'s ["Get started guide"](https://developers.cloudflare.com/workers/get-started/guide):
+If you're interested in opening a PR to support running MusicThread RSS in other environments, please open an issue so we can discuss it first.
 
-1. Clone the latest release.
-2. Install [node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), if you haven't already.
-3. In the repo's root, execute `npm install` to pull down all dependencies.
-4. Install wrangler with `npm install -g wrangler`.
-5. Link `wrangler` with your Cloudflare account with `wrangler login`, following the guided setup to completion.
+### Local development
 
-## Usage
+MusicThread RSS requires [node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [wrangler](https://github.com/cloudflare/wrangler2) and a [Cloudflare](https://www.cloudflare.com) account.
 
-To run the service locally for development (your service will be available at `http://localhost:8787`):
+An introduction to Cloudflare Workers is available here: ["Get started guide"](https://developers.cloudflare.com/workers/get-started/guide).
 
-```bash
-$ npm run start
-```
+To get set up locally:
 
-To deploy a fresh build to your Cloudflare Worker account (which from then on will be publicly accessible):
+ 1. Clone the latest release
+ 2. In the project's root, run `npm install` to install all dependencies
+ 3. Run `npm run dev` to run the local development server and watch the code for changes (the development service is available at `http://localhost:8787`)
 
-```bash
-$ npm run deploy
-```
+> Note: You may need to run `npm run cf-login` to sign into your Cloudflare account if this is your first time using Cloudflare Workers.
 
-Following a deployment, simply target the address with a valid MusicThread thread path (e.g. `/thread/221MoMPiOUJiqUoTVONYHiqjZEK`) and subscribe to that complete URL in your [RSS Reader of choice](https://www.reederapp.com) or [IFTTT](https://ifttt.com) automation pipeline.
+### Deployment
 
-## Cloudflare Worker Limitations
+Updates to the MusicThread hosted service are deployed manually, typically after merging into the `main` branch.
 
-There are a number of limitations with Cloudflare Workers, most notably:
+Deploying to your own Cloudflare account can be done by running `npm run deploy`, however additional setup may be needed. Please refer to Cloudflare's documentation for help.
 
-* Requests are capped to 100,000 requests/day
-* Requests are capped to 1,000 requests/min
-* CPU time for a given request is capped to 10 milliseconds with the free plan and 50 milliseconds for paid plans (doesn't appear to be an issue in practice for a microservice as light as this, but this bares noting nonetheless)
-
-If at a later time the feed's usage threatens to bump up to any of these limitations, it may prove worthwhile to migrate the service to another provider or self-host.
+If deploying to your own Cloudflare account, you should be aware of their request limits and pricing plans.
