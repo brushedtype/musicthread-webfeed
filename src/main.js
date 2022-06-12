@@ -1,14 +1,16 @@
 addEventListener('fetch', event => {
     event.respondWith(main(event.request));
 });
+
 async function main(request) {
     // Validate request
     if (request.method !== "GET") {
         return new Response("Only GET is supported", { status: 400 })
     }
-    let threadKey = extractThreadKey(request.url)
+
+    let threadKey = parseThreadKey(request.url)
     if (threadKey == null) {
-        return new Response("Invalid request path, expects valid MusicThread thread path", { status: 400 })
+        return new Response("Unsupported request path, expects valid MusicThread thread path", { status: 404 })
     }
 
     // Fetch MusicThread thread
@@ -19,13 +21,24 @@ async function main(request) {
                 Accept: "application/json;charset=UTF-8"
             }
         });
-        thread = await response.json();
+        const json = await response.json();
+
+        if (response.status >= 400) {
+            const stdErrorResponse = "Failed to fetch response from MusicThread"
+            const errorMessage = (json.error != null) ? `${stdErrorResponse} (${json.error})` : stdErrorResponse
+            return new Response(errorMessage, { status: response.status });
+        }
+
+        thread = json
+
     } catch (exception) {
         return new Response("Failed to fetch response from MusicThread", { status: 500 })
     }
 
-    // Generate & return RSS Feed
+    // Generate RSS Feed
     let feed = generateRssFeed(thread);
+
+    // Return HTTP response
     return new Response(feed, {
         headers: {
             "Content-Type": "application/xml;charset=UTF-8"
@@ -34,8 +47,8 @@ async function main(request) {
 };
 
 /**
- * Returns a valid RSS feed for the provied MusicThread as a String XML.
- * 
+ * Returns a valid RSS feed for the provided MusicThread as a String XML.
+ *
  * @param  {Object} root The JSON response returned by MusicThread's "Get Thread" API
  * @return {String} The XML RSS Feed for this thread
  */
@@ -88,7 +101,7 @@ String.prototype.capitalize = function() {
 /**
  * Generates the content body for a given thread "link". This is what's
  * displayed in RSS readers when you select a particular entry.
- * 
+ *
  * @param  {Object} link The MusicThread link object
  * @return {String} An HTML String for the provided MusicThread link
  */
@@ -105,7 +118,7 @@ function generateItemContent(link) {
  *
  * Approach snagged from deftstack's HTML Encoding guide.
  * https://www.delftstack.com/howto/javascript/htmlencode-javascript/
- * 
+ *
  * @param  {String} text The string to encode
  * @return {String} The encoded String ready to use as HTML values
  */
@@ -121,17 +134,27 @@ function encodeHtml(text) {
 
 /**
  * Attempts to extract and return the thread key from the provided URL String.
- * 
- * @param {String} url The request's full URL 
+ *
+ * @param {String} url The request's full URL
  * @return {String} The thread key if found, otherwise null (invalid request)
  */
-function extractThreadKey(url) {
-    let urlTokens = url.split("/")
-    if (urlTokens.length < 5) {
+function parseThreadKey(url) {
+    const requestURL = new URL(url);
+    const pathComponents = requestURL.pathname.substring(1).split("/");
+
+    console.log(pathComponents)
+
+    if (pathComponents.length !== 2) {
         return null;
     }
-    if (urlTokens[4].length !== 27) {
+
+    if (pathComponents[0] !== "thread") {
         return null;
     }
-    return urlTokens[4];
+
+    if (pathComponents[1].length === 0) {
+        return null;
+    }
+
+    return pathComponents[1];
 }
