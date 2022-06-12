@@ -24,10 +24,20 @@ To run the service locally for development (your service will be available at `h
 $ npm run start
 ```
 
-To deploy a fresh build to your Cloudflare Worker account (which from then on will be publically accessible):
+To deploy a fresh build to your Cloudflare Worker account (which from then on will be publicly accessible):
 
 ```bash
 $ npm run deploy
 ```
 
 Following a deployment, simply target the address with a valid MusicThread thread path (e.g. `/thread/221MoMPiOUJiqUoTVONYHiqjZEK`) and subscribe to that complete URL in your [RSS Reader of choice](https://www.reederapp.com) or [IFTTT](https://ifttt.com) automation pipeline.
+
+## Cloudflare Worker Limitations
+
+There are a number of limitations with Cloudflare Workers, most notably:
+
+* Requests are capped to 100,000 requests/day
+* Requests are capped to 1,000 requests/min
+* CPU time for a given request is capped to 10 milliseconds with the free plan and 50 milliseconds for paid plans (doesn't appear to be an issue in practice for a microservice as light as this, but this bares noting nonetheless)
+
+If at a later time the feed's usage threatens to bump up to any of these limitations, it may prove worthwhile to migrate the service to another provider or self-host.
