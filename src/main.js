@@ -42,7 +42,7 @@ async function main(request) {
 function generateRssFeed(root) {
     let rssFeed = `<?xml version="1.0" encoding="utf-8"?>
         <feed xmlns="http://www.w3.org/2005/Atom">
-            <generator uri="https://github.com/brushedtype/musicthread-feed-generator" version="0.9.0">MusicThread Feed Generator</generator>
+            <generator uri="https://github.com/brushedtype/musicthread-rss" version="0.9.0">MusicThread RSS</generator>
             <updated>` + new Date().toISOString() + `</updated>
             <author>
               <name>` + encodeHtml(root.thread.author.name) + `</name>
