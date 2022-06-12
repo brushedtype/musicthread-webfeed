@@ -108,7 +108,7 @@ function generateRSSFeedThreadSummary(thread) {
     if (thread.description == "") {
         return ""
     }
-    return `<subtitle>${encodeHtml(root.thread.description)}</subtitle>`
+    return `<subtitle>${encodeHtml(thread.description)}</subtitle>`
 }
 
 /**
