@@ -1,10 +1,10 @@
 # MusicThread Feed Generator
 
-A light microservice to serve [Atom 1.0 Feeds](https://www.rfc-editor.org/rfc/rfc4287) for MusicThread threads using the same URL path schema (i.e. `/thread/<THREAD_KEY>`).
+A light microservice to serve [Atom 1.0 Feeds](https://www.rfc-editor.org/rfc/rfc4287) for [MusicThread](https://musicthread.app) threads using the same URL path schema (i.e. `/thread/<THREAD_KEY>`).
 
 ## Architecture
 
-The microservice is a single Java file (`src/main.js`) powered by [Node.js](https://nodejs.org/en/) and [Cloudflare Workers](https://workers.cloudflare.com)' CLI, [wrangler2](https://github.com/cloudflare/wrangler2). However, the microservice isn't tighly coupled to this environment may be trivially integrated into other environments.
+The microservice is a single Javascript file (`src/main.js`) powered by [Node.js](https://nodejs.org/en/) and [Cloudflare Workers](https://workers.cloudflare.com)' CLI, [wrangler](https://github.com/cloudflare/wrangler2). However, the microservice isn't tighly coupled to this environment may be trivially integrated into other environments, if desired.
 
 ## Installation
 
@@ -29,3 +29,5 @@ To deploy a fresh build to your Cloudflare Worker account (which from then on wi
 ```bash
 $ npm run deploy
 ```
+
+Following a deployment, simply target the address with a valid MusicThread thread path (e.g. `/thread/221MoMPiOUJiqUoTVONYHiqjZEK`) and subscribe to that complete URL in your [RSS Reader of choice](https://www.reederapp.com) or [IFTTT](https://ifttt.com) automation pipeline.
