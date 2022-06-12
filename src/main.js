@@ -142,8 +142,6 @@ function parseThreadKey(url) {
     const requestURL = new URL(url);
     const pathComponents = requestURL.pathname.substring(1).split("/");
 
-    console.log(pathComponents)
-
     if (pathComponents.length !== 2) {
         return null;
     }
