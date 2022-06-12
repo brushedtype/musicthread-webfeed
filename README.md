@@ -1,4 +1,4 @@
-# MusicThread Feed Generator
+# MusicThread RSS
 
 A light microservice to serve [Atom 1.0 Feeds](https://www.rfc-editor.org/rfc/rfc4287) for [MusicThread](https://musicthread.app) threads using the same URL path schema (i.e. `/thread/<THREAD_KEY>`).
 

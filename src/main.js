@@ -96,7 +96,8 @@ function generateItemContent(link) {
     return `<img src="` + link.thumbnail_url + `">
     <h1>` + encodeHtml(link.title) + `</h1>
     <h3>by `+ encodeHtml(link.artist) + `</h3>`
-    + (link.description?.length > 0 ? (`<p>` + link.description + `</p>`) : ``);
+    + (link.description?.length > 0 ? (`<p>` + link.description + `</p>`) : ``) +
+    `<p><a href="https://musicthread.app/link/` + link.key + `">Open in MusicThread</a></p>`;
 }
 
 /**
