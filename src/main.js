@@ -137,8 +137,7 @@ function generateRSSFeed(root) {
     const categoryContentItems = generateRSSFeedCategories(root.thread).join("\n");
     const entryContentItems = root.links.map(link => generateRssFeedEntry(link)).join("\n");
 
-    return `
-<?xml version="1.0" encoding="utf-8"?>
+    return `<?xml version="1.0" encoding="utf-8" ?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <generator uri="https://github.com/brushedtype/musicthread-rss" version="0.9.0">MusicThread RSS</generator>
     <updated>${(new Date()).toISOString()}</updated>
