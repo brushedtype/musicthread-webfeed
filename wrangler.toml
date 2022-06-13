@@ -1,4 +1,4 @@
-name = "musicthread-rss"
+name = "musicthread-webfeed"
 main = "src/main.js"
 compatibility_date = "2022-06-08"
 workers_dev = true

@@ -26,8 +26,8 @@ async function main(request) {
             return new Response(errorMessage, { status: response.status });
         }
 
-        // Generate RSS Feed
-        const feed = generateRSSFeed(json);
+        // Generate Atom Feed
+        const feed = generateAtomFeed(json);
 
         // Return successful HTTP response
         return new Response(feed, {
@@ -58,7 +58,7 @@ async function fetchThread(key) {
  * @param  {Object} link The Link object obtained from the MusicThread API
  * @return {String} The summary element or empty string
  */
-function generateRSSFeedEntrySummary(link) {
+function generateAtomFeedEntrySummary(link) {
     if (link.description == "") {
         return "";
     }
@@ -71,10 +71,10 @@ function generateRSSFeedEntrySummary(link) {
  * @param  {Object} link The Link object obtained from the MusicThread API
  * @return {Array<String>} The valid XML element representing the given link
  */
-function generateRssFeedEntry(link) {
+function generateAtomFeedEntry(link) {
     const linkURL = `https://musicthread.app/link/${link.key}`
 
-    const summaryContent = generateRSSFeedEntrySummary(link)
+    const summaryContent = generateAtomFeedEntrySummary(link)
 
     return `
 <entry>
@@ -104,7 +104,7 @@ function generateRssFeedEntry(link) {
  * @param  {Object} thread The Thread object obtained from the MusicThread API
  * @return {String} The subtitle element or empty string
  */
-function generateRSSFeedThreadSummary(thread) {
+function generateAtomFeedThreadSummary(thread) {
     if (thread.description == "") {
         return ""
     }
@@ -117,29 +117,29 @@ function generateRSSFeedThreadSummary(thread) {
  * @param  {Object} thread The Thread object obtained from the MusicThread API
  * @return {Array<String>} The array of valid XML tags representing the thread tags
  */
-function generateRSSFeedCategories(thread) {
+function generateAtomFeedCategories(thread) {
     return thread.tags.map(tag => {
         return `<category term="${encodeHtml(tag)}" />`
     })
 }
 
 /**
- * Returns a valid RSS feed for the provided MusicThread as a String XML.
+ * Returns a valid Atom feed for the provided MusicThread as a String XML.
  *
  * @param  {Object} root The JSON response returned by MusicThread's "Get Thread" API
- * @return {String} The XML RSS Feed for this thread
+ * @return {String} The XML Atom Feed for this thread
  */
-function generateRSSFeed(root) {
-    const feedURL = `https://rss.musicthread.app/thread/${root.thread.key}`;
+function generateAtomFeed(root) {
+    const feedURL = `https://feed.musicthread.app/thread/${root.thread.key}`;
     const threadURL = `https://musicthread.app/thread/${root.thread.key}`;
 
-    const subtitleContent = generateRSSFeedThreadSummary(root.thread);
-    const categoryContentItems = generateRSSFeedCategories(root.thread).join("\n");
-    const entryContentItems = root.links.map(link => generateRssFeedEntry(link)).join("\n");
+    const subtitleContent = generateAtomFeedThreadSummary(root.thread);
+    const categoryContentItems = generateAtomFeedCategories(root.thread).join("\n");
+    const entryContentItems = root.links.map(link => generateAtomFeedEntry(link)).join("\n");
 
     return `<?xml version="1.0" encoding="utf-8" ?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <generator uri="https://github.com/brushedtype/musicthread-rss" version="0.9.0">MusicThread RSS</generator>
+    <generator uri="https://github.com/brushedtype/musicthread-webfeed" version="0.9.0">MusicThread Web Feeds</generator>
     <updated>${(new Date()).toISOString()}</updated>
 
     <id>${feedURL}</id>
@@ -172,7 +172,7 @@ String.prototype.capitalize = function() {
 
 /**
  * Generates the content body for a given thread "link". This is what's
- * displayed in RSS readers when you select a particular entry.
+ * displayed in Atom readers when you select a particular entry.
  *
  * @param  {Object} link The MusicThread link object
  * @return {String} An HTML String for the provided MusicThread link
