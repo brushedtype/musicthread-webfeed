@@ -28,7 +28,7 @@ To get set up locally:
  2. In the project's root, run `npm install` to install all dependencies
  3. Run `npm run dev` to run the local development server and watch the code for changes (the development service is available at `http://localhost:8787`)
 
-> **Note:** You may need to run `npm run cf-login` to sign into your Cloudflare account if this is your first time using Cloudflare Workers.
+> **Note**: You may need to run `npm run cf-login` to sign into your Cloudflare account if this is your first time using Cloudflare Workers.
 
 ### Deployment
 
